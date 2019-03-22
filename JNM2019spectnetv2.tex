@@ -1,0 +1,373 @@
+\documentclass[review]{elsarticle}
+
+\usepackage{lineno,hyperref}
+\modulolinenumbers[5]
+
+\journal{Journal of Neuroscience Methods}
+
+%%%%%%%%%%%%%%%%%%%%%%%
+%% Elsevier bibliography styles
+%%%%%%%%%%%%%%%%%%%%%%%
+%% To change the style, put a % in front of the second line of the current style and
+%% remove the % from the second line of the style you would like to use.
+%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Numbered
+%\bibliographystyle{model1-num-names}
+
+%% Numbered without titles
+%\bibliographystyle{model1a-num-names}
+
+%% Harvard
+%\bibliographystyle{model2-names.bst}\biboptions{authoryear}
+
+%% Vancouver numbered
+%\usepackage{numcompress}\bibliographystyle{model3-num-names}
+
+%% Vancouver name/year
+%\usepackage{numcompress}\bibliographystyle{model4-names}\biboptions{authoryear}
+
+%% APA style
+%\bibliographystyle{model5-names}\biboptions{authoryear}
+
+%% AMA style
+%\usepackage{numcompress}\bibliographystyle{model6-num-names}
+
+%% `Elsevier LaTeX' style
+\bibliographystyle{elsarticle-num}
+%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{Deep learning with EEG spectrograms in REM Sleep Behaviour Disorder\tnoteref{mytitlenote}}
+\tnotetext[mytitlenote]{Fully documented templates are available in the elsarticle package on \href{http://www.ctan.org/tex-archive/macros/latex/contrib/elsarticle}{CTAN}.}
+
+%% Group authors per affiliation:
+%\author{Elsevier\fnref{myfootnote}}
+%\address{Radarweg 29, Amsterdam}
+%\fntext[myfootnote]{Since 1880.}
+
+%% or include affiliations in footnotes:
+\author[mymainaddress,mysecondaryaddress]{Giulio~Ruffini}
+\ead[url]{neuroelectrics.com}
+
+\author[mysecondaryaddress]{David Ib\'a\~nez }
+
+\author[mysecondaryaddress]{Andr\'es Rojas}
+
+\author[mysecondaryaddress]{Marta Castellano}
+
+\author[mysecondaryaddress]{Eleni Kroupi}
+
+\author[mymainaddress]{Laura Dubreuil}
+
+\author[mythirdaddress]{Ron Postuma}
+
+\author[mythirdaddress]{Jean-Fran\c{c}ois Gagnon}
+
+\author[mythirdaddress]{Jacques Montplaisir}
+
+\author[mysecondaryaddress]{Aureli Soria-Frisch\corref{mycorrespondingauthor}}
+\cortext[mycorrespondingauthor]{Corresponding author}
+\ead{aureli.soria-frisch@starlab.es}
+\ead[url]{www.starlab.es}
+
+\address[mymainaddress]{Neuroelectrics Corporation, Cambridge, MA 02139}
+\address[mysecondaryaddress]{Starlab Barcelona, Av. Tibidabo 47 bis, 08035 Barcelona}
+\address[mythirdaddress]{Centre for Advanced Research in Sleep Medicine, H\^opital du Sacr\'e-C\oe ur de Montr\'eal, Canada}
+
+\begin{abstract}
+REM Sleep Behavior Disorder (RBD) is now recognized as the prodromal stage of alpha-synucleinopathies such as Parkinson's Disease (PD). In this paper, we describe deep learning  models for diagnosis/prognosis derived  from a few minutes of eyes-closed resting electroencephalography data (EEG) collected from idiopathic RBD patients (N=121) and healthy controls (HC, N=91). A few years after the EEG acquisition (in average 4 years), a subset of the RBD patients eventually developed either PD (N=14) or Dementia with Lewy bodies (DLB, N=13), while the rest remained idiopathic. 
+We describe first a deep convolutional neural network (DCNN) with a five-layer architecture combining filtering and pooling, which receives stacked multi-channel EEG spectrograms as feature input. Data representation is inspired in audio processing problems, where deep networks have proven highly successful. 
+  For the sake of comparison, we study an even simpler deep recurrent neural network with very similar results.
+The performance of these networks  typically reaches 80\% classification accuracy in the HC vs. PD classification problem. In particular,  using data from a single EEG channel we obtain an area under the curve (AUC) of 87\%. The trained classifier can also be used to generate synthetic spectrograms to study what spectrogram features are relevant for classification, whereby the presence of theta band bursts and a decrease of power in the alpha band characterize future PD or DLB patients as compared to HCs. We conclude that deep networks may provide a key tool for the analysis of EEG features and enable the delivery of new biomarkers.
+\end{abstract}
+
+\begin{keyword}
+Deep Learning \sep Deep Convolutional Neural Networks \sep  Electroencephalography \sep Parkinson's diagnosis and prognosis \sep Biomarker discovery
+\end{keyword}
+
+\end{frontmatter}
+
+\linenumbers
+
+\section{Introduction}
+
+
+%REM Behavior Disorder (RBD) is a serious risk factor for neurodegenerative diseases such as Parkinson's disease (PD) \cite{Hogl:2018aa}. , is now recognized as the prodromal stage of an ??synucleinopathy.
+RBD is a parasomnia characterized by intense dreams with during REM sleep without muscle atonia \citep{iranzo:2014aa}, i.e., with vocalizations and body movements. Idiopathic RBD occurs in the absence of any neurological disease or other identified cause, is male-predominant and its clinical course is generally chronic progressive \citep{Fulda:2011aa}. Several longitudinal studies conducted in sleep centers have shown that most patients diagnosed with the idiopathic form of RBD will eventually be diagnosed with a neurological disorder such as Parkinson disease (PD) or dementia with Lewy bodies (DLB) \citep{postuma:2009aa,Fulda:2011aa,iranzo:2014aa,Hogl:2018aa}. In essence, idiopathic RBD has been suggested as a prodromal stage of $\alpha$-synucleinopathies (PD, DLB and less frequently multiple system atrophy (MSA) \citep{iranzo:2014aa,Hogl:2018aa}).
+ 
+ 
+RBD has an estimated prevalence of 15-60\% in PD and has been proposed to define a subtype of PD with relatively poor prognosis, reflecting a brainstem-dominant route of pathology progression (see \cite{Kim:2017aa} and references therein) with a higher risk for dementia or hallucinations. PD with RBD is characterized by more profound and extensive pathology---not limited to the brainstem---, with higher synuclein deposition in both cortical and sub-cortical regions.
+ 
+ Electroencephalographic (EEG) and magnetoencephalographic (MEG) signals contain rich information associated with functional processes in the brain. To a large extent, progress in their analysis has been driven by the study of spectral features in electrode space, which has indeed proven useful to study the human brain in both health and disease. For example, the ``slowing down" of EEG is known to characterize neurodegenerative diseases \cite{Fantini:2003aa,Brazete:2016aa,Ruffini:2017ac}.  It is worth mentioning that the selection of disease characterizing features from spectral analysis is mostly done manually after an extensive search in the frequency-channel domain.
+ 
+ However, neuronal activity exhibits non-linear dynamics and non-stationarity across temporal scales that cannot be studied properly using classical approaches.
+Tools capable of capturing the rich spatiotemporal hierarchical structures hidden in these signals are needed. 
+ In \cite{Ruffini:2017ac}, for example, algorithmic complexity metrics of EEG spectrograms were used to derive information from the dynamics of EEG signals in RBD patients, with good results, indicating that such metrics may be useful per se for classification or scoring. However, ideally we would like to use methods where the relevant features are found directly by the algorithms. 
+ 
+Deep learning algorithms are designed for the task of exploiting compositional structure in data \cite{Poggio2016}. In past work, for example, deep feed-forward autoencoders have been used for the analysis of EEG data to address the issue of feature selection, with promising results \cite{Kroupi2017}. Interestingly, deep learning techniques, in particular, and artificial neural networks in general are themselves bio-inspired in the brain---the same biological system generating the electric signals we aim to decode. This suggests they may be well suited for the task. 
+
+Deep recurrent neural networks (RNNs), are known to be potentially Turing complete \cite{Ruffini:2016ae}, but general RNN architectures are notoriously difficult to train \cite{Goodfellow2016}. In this regard, it is worth mentioning that ``reservoir" based RNN training approaches are evolving \cite{Laje:2013aa}. 
+%EEG signals probably encode abundant information that cannot be extracted using classical, linear techniques, especially those that are blind to non-linear dynamical aspects. 
+In related work, a particular class of RNNs called Echo State Networks (ESNs) that combine the power of RNNs for classification of temporal patterns and ease of training \cite{Ruffini:2016ad} was used with good results. 
+The main idea behind ESNs and other ``reservoir computation" approaches is to use semi-randomly connected, large, fixed recurrent neural networks where each node/neuron in the reservoir is activated in a non-linear fashion. The interior nodes with random weights constitute what is called the ``dynamic reservoir" of the network. 
+ The dynamics of the reservoir provides a feature representation map of the input signals into a much larger dimensional space (in a sense much like a kernel method). Using such an ESN, an accuracy of 85\% in a binary, class-balanced classification problem (healthy controls versus PD patients) was obtained using a relatively small dataset \cite{Ruffini:2016ad}. The main limitations of this approach, in our view, are the computational cost of developing the reservoir dynamics of large random networks and the associated need for feature selection (e.g., which subset of frequency bands and channels to use as inputs to simplify the computational burden). 
+ 
+In this paper we use a similar but simpler strategy as the one presented in \cite{Vilamala:2017aa}, using Convolutional Networks with EEG signals, i.e. multi-channel time series. In contrast to \cite{Vilamala:2017aa}, we reduce the number of hidden layers from 16 to 4, use a simpler approach for the generation of spectrograms, and do not use transfer learning from a network trained on a visual recognition task. Indeed, we believe such a pre-training would initialize the filtering weights to detect object-like features not present in spectrograms. The proposed methodology outperforms several shallow methods used for comparison as presented in the results section. Lastly, we propose the utilization of deep-learning visualization techniques for the interpretation of results. This is important for the use and acceptance of such techniques in the clinical domain, where black-box approaches have been extensively criticized, 
+ 
+ \subsection{Deep learning in the spectrogram representation}
+Here we explore first a deep learning approach inspired by recent successes in image classification using deep convolutional neural networks (DCNNs), designed to exploit invariances and capture compositional features in the data (see e.g., \cite{Goodfellow2016,Poggio2016,Ruffini:2016ae}). These systems have been largely developed to deal with image data, i.e., 2D arrays, possibly from different channels, or audio data (as in \cite{Oord2013}), and, more recently, with EEG data as well \citep{Tsinalis:2016aa,Vilamala:2017aa}. Thus, inputs to such networks are data cubes (multichannel stacked images). In the same vein, we aimed to work here with the spectrograms of EEG channel data, i.e., 2D time-frequency maps. Such representations represent spectral dynamics as essentially images with the equivalent of image depth provided by multiple available EEG channels (or, e.g., current source density maps or cortically mapped quantities from different spatial locations). Using such representation, we avoid the need to select frequency bands or channels in the process of feature selection. This approach essentially treats EEG channel data as an audio file, and our approach mimics similar uses of deep networks in that domain. 
+
+RNNs can also be used to classify images, e.g., using image pixel rows as time series. This is particularly appropriate in our case, given the good performance we obtained using ESNs on temporal spectral data. We study here also the use of stacked architectures of long-short term memory network (LSTM) or gated-recurrent unit (GRU) cells, which have shown good representational power and can be trained using backpropagation \cite{Hochreiter:1997aa,Goodfellow2016,Cho:2014aa}.
+
+ Our general assumption is that some relevant aspects in EEG data from our datasets are contained in compositional features embedded in the time-frequency representation. This assumption is not unique to our particular classification domain, but should hold of EEG in general. In particular, we expect that deep networks may be able to efficiently learn to identify features in the time-frequency domain associated to bursting events across frequency bands that may help separate classes, as in ``bump analysis" \citep{Dauwels:2010aa}. Bursting events are hypothesized to be representative of transient synchrony of neural populations, which are known to be affected in neurodegenerative diseases such as Parkinson's or Alzheimer's disease \citep{Uhlhaas:2016aa}.
+ 
+Finally, we note that we make no attempt to fully-optimize our architecture. In particular, no fine-tuning of hyper-parameters has been carried out using a validation set approach, something we leave for future work with larger datasets. Our aim has been to implement a proof of concept of the idea that deep learning approaches can provide value for the analysis of time-frequency representations of EEG data.
+
+
+\begin{figure}
+	\centering
+	\includegraphics[height=5.cm]{figures/stack}
+	\caption{Generation of spectrogram stack for each data epoch for a subject from preprocessed (artifact rejection, referencing, detrending) EEG data. }
+	\label{fig:stack}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%
+\section{EEG dataset}
+
+
+Idiopathic RBD patients (called henceforth RBD for data analysis labeling) and healthy controls were recruited at the Center for Advanced Research in Sleep Medicine of the H\^opital du Sacr\`e-C\oe ur de Montr\`eal as part of another study and kindly provided for this work. All patients with a full EEG montage for resting-state EEG recording at baseline and with at least one follow-up examination after the baseline visit were included in the study. The first valid EEG for each patient enrolled in the study was considered baseline. Participants also underwent a complete neurological examination by a neurologist specialized in movement disorders and a cognitive assessment by a neuropsychologist. No controls reported abnormal motor activity during sleep or showed cognitive impairment on neuropsychological testing. The protocol was approved by the hospital's ethics committee, and all participants gave their written informed consent to participate. For more details on the protocol and on the patient population statistics (age and gender distribution, follow up time, etc.), see \cite{Brazete:2016aa}. %The cohort used here is the same as the one described in \cite{Ruffini:2017ac}.
+
+As in related work \citep{Brazete:2016aa,Ruffini:2016ad,Ruffini:2017ac}, the raw data in this study consisted of resting-state EEG collected from awake patients using 14 scalp electrodes. The recording protocol consisted of conditions with periods of ``eyes open" of variable duration ($\sim 2.5$ minutes) followed by periods of ``eyes closed" in which patients were not asked to perform any particular task. EEG signals were digitized with 16-bit resolution at a sampling rate of 256 S/s. The amplification device bandpass filtered the EEG data between 0.3 and 100 Hz with a notch filter at 60 Hz to minimize line power noise. All recordings were referenced to linked ears.
+The dataset includes a total of 121 patients diagnosed with RBD (of which 118 passed the first quality tests) and 85 healthy controls (of which only 74 provided sufficient quality data) without sleep complaints and in which RBD was excluded. EEG data was collected in every patient at baseline, i.e., when they were still RBD. After 1-10 years of clinical follow-up and , 14 patients converted to PD, 13 to DLB, while the rest remained idiopathic RBD. 
+Our description here focuses on the previously studied balanced HC {\em vs.} PD binary classification problem. % It is worth pointing out that the dataset is highly unbalanced, i.e. 74 HC vs 14 PD.
+% involving the available 14 PD converters and 14 HCs randomly selected for each classification train/test cycle. Each data snipped per subject contains information of power in 10 bands, 14 elecrtrodes and about 200 samples
+
+\begin{figure}
+	\centering
+	\includegraphics[height=10cm]{figures/SpectNet}
+	\caption{A. DCNN model displaying input, convolution with pooling layers, and hidden-unit layers. The output, here for the binary classification problem using one-hot encoding, is a two node layer. B. Shallow neural network architecture used for comparison. C. Deep RNN using LSTM or GRU cells.}
+	\label{fig:arch}
+\end{figure}
+
+
+\subsection{Preprocessing and generation of spectrograms}
+To create spectrograms (the frames), EEG data from each channel was processed using Fourier analysis (FFT) after detrending blocks of 1 second with a Hann window (FFT resolution is 2 Hz) (see Figure~\ref{fig:stack}). To create the spectrogram frames, 20 second 14 channel artifact-free epochs were collected for each subject, using a sliding window of 1 second. FFT amplitude bins in the band 4-44 Hz were used. 
+The data frames are thus multidimensional arrays of the form [channels (14)] x [FFTbins (21)] x [Epochs (20)]. The number of frames per subject was fixed, as a trade-off between data per subject and number of subjects included, to 148, representing about 2.5 minutes of data. We selected a minimal suitable number of frames per subject so that each subject provided the same number of frames. For training, datasets were balanced for subjects by random replication of subjects in the class with fewer subjects. For testing, we used a leave-pair-out strategy (LPO \cite{Airola2010}), with one subject from each class. Thus, both the training and test sets were balanced both in terms of subjects and frames per class.
+Finally, the data was centered and normalized to unit variance for each frequency and channel.
+
+
+%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{Architectures}
+We have implemented three architectures: DCNN and stacked RNN, as we now describe, plus a shallow architecture for comparison---see Figure~\ref{fig:arch}.
+\subsection{Convolutional network architecture}
+The network (which we call {\em SpectNet}), implemented in {\em Tensorflow} \cite{Abadi:2016aa}), is a relatively simple four hidden-layer convolutional net with pooling (see Figure~\ref{fig:arch}). Dropout has been used as the only regularization. All EEG channels may be used in the input cube. 
+The design philosophy has been to enable the network to find local features first and create larger views of data with some temporal (but not frequency) shift invariance via max-pooling.
+
+The network has been trained using a cross-entropy loss function to classify frames (not subjects). It has been evaluated both on frames and, more importantly, on subjects by averaging subject frame scores and choosing the maximal probability class, i.e., using a 50\% threshold. 
+For development purposes, we have also tested the performance of this DCNN on a synthetic dataset consisting of Gaussian radial functions randomly placed on the spectrogram time axis but with variable stability in frequency, width and amplitude (i.e, by adding some jitter top these parameters). Frame classification accuracy was high and relatively robust to jitter ($\sim$95-100\%, depending on parameters).
+
+%Finally, for comparison, we have also trained a single hidden-layer shallow fully connected network (SNN) with 1024 hidden notes --- with performance similar to our previous work with ESNs at about 85\% accuracy).
+
+
+
+
+\subsection{RNN network architecture}
+The architectures for the RNNs consisted of stacked LSTM \cite{Hochreiter:1997aa,Goodfellow2016} or GRU cells \cite{Cho:2014aa}. The architecture we describe here consists of three stacked cells, where each cell uses as input the outputs of the previous one. Each cell used 32 hidden units, and dropout was used to regularize it. The performance of LSTM and GRU variants was very similar. 
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Classification performance assessment}
+
+
+\begin{table}
+\caption{Performance in different problems using a single EEG channel (P4). From left to right: architecture used and problem addressed (groups); Number of subjects in training and test sets per group (always balanced); train and test average performance on frames; test accuracy and LPO cross-validation area-under-the-curve metric (AUC) \label{table} \cite{Airola2010}. Results to  $\pm 1$\%. }
+{\footnotesize
+\begin{tabular}{ p{4.5cm} p{2.6cm} p{2.6cm} p{2.6cm} }
+	\hline 
+	\rule[-1ex]{0pt}{2.5ex} \bf Problem 		& \bf N \newline train/test & \bf Frame \newline train/test \newline ACC	 & \bf Subject test \newline ACC (AUC) \\ 
+	\hline 	\hline 
+% 	\rule[-1ex]{0pt}{2.5ex} DCNN: HC vs PD & 2x10 / 2x3 			& 79\% / 73\% & 93\% \\ 
+% 	\hline 
+% 	\rule[-1ex]{0pt}{2.5ex} SNN : HC vs PD & 2x10 / 2x3 & 75\% / 65\% & 85\% \\ 
+% 	\hline \hline 
+	\rule[-1ex]{0pt}{2.5ex} DCNN: HC vs PD & 2x73 / 2x1 & 80\% / 73\% & 79\% (87\%) \\ 
+	\hline 
+	\rule[-1ex]{0pt}{2.5ex} RNN: HC vs PD & 2x73 / 2x1 &77\% / 74\% & 81\% (87\%) \\ 
+	\hline 
+	\rule[-1ex]{0pt}{2.5ex} DCNN: HC+RBD vs PD+DLB & 2x159 / 2x1 &73\% / 68\% & 73\% (78\%) \\ 
+	\hline %72.50473571 68.46180627 72.61450382 77.95801527]
+	\rule[-1ex]{0pt}{2.5ex} RNN: HC+RBD vs PD+DLB & 2x159 / 2x1 & 76\% / 68\% & 72\% (77\%) \\ 
+	\hline 
+%	\rule[-1ex]{0pt}{2.5ex} DCNN: 3 class & 3x12 / 3x1 & 56\% / 42\% & 74\% \\ 
+%	\hline 
+%	\rule[-1ex]{0pt}{2.5ex} DCNN: 4 class & 4x12 / 4x1 & 54\% / 38\% & 73\% \\ 
+%	\hline 
+\end{tabular} 
+}
+%RNN HC vs PD test-GPU clean16-3L (**)-v2-LSTM-dropout (***) for RNN HC vs PD
+
+\end{table}
+
+
+
+Classification performance has been evaluated in two ways using leave-pair out cross-validation (LPO) with a subject from each class. First, by working with balanced dataset using the accuracy metric (probability of good a classification), and second, by using the area under the curve (AUC) \citep{Airola2010}. To map out the classification performance of the DCNN for different parameter sets, we have implemented a set of algorithms based on the {\em Tensorflow} package \cite{Abadi:2016aa} as described in the following pseudocode:
+{\scriptsize
+\begin{verbatim} 
+ REPEAT N times (experiments):
+  1- Choose (random, balanced) training and test subject sets (leave-pair-out)
+  2- Augment smaller set by random replication of subjects
+  3- Optimize the NN using stochastic gradient descent with frames as inputs
+  4- Evaluate per-frame performance on training and test set
+  5- Evaluate per-subject performance averaging frame outputs
+ END   
+ Compute mean and standard deviation of performances over the N experiments   
+\end{verbatim} 
+}
+For each frame, the classifier outputs  the probability of the frame belonging to each class (using {\em softmax}, see, e.g., \cite{Goodfellow2016}) and, as explained above, after averaging over frames per subject we obtain the probability of the subject belonging to each class. This provides an interesting score in itself. Classification is carried out by choosing the class with maximal  probability. 
+
+ 
+%A first test (health check) of the classifier was realized by randomizing class labels, both in train and test sets, resulting in random classification in the LPO HC vs. PD problem (67$\pm 0.2$\% and 50 $\pm 0.2$\% frame train and test accuracy, and with 51 $\pm 2$\% subject classification accuracy after 500 folds). 
+
+The results from classification are shown in Table~\ref{table} for the HC vs. PD problem and the HC+RBD vs. PD+DLB problem, which includes more data. Sample results for the RNN architecture (which are very similar to  DCNN results) are provided in Figure~\ref{fig:scores}.
+For comparison, using a shallow architecture neural network resulted in about 10\% less ACC or AUC (in line with our results using support vector machine (SVM) classifiers \cite{Soria2014:aa,Soria2016:aa}). Figure~\ref{fig:perchannel} provides the performance in the HC vs. PD problem using different EEG channels using a smaller number of folds.
+
+
+
+%67.34384435 50.21634123 50.6   0. 
+
+%A second test explored the role of time ordering by randomizing time indexes in the data (accuracy dropped to $\sim$86\%), channels (85\%), frequency (80\%), and fully scrambling all the indexes within a frame (74\%). Interestingly, the training accuracy on frames actually improved with these data transformations ($>96$\%).
+
+%Finally, a test using only 8 channels (F7, F8, C3, C4, O1, O2, T5, T6) provided essentially the same performance as the 14 channel version.
+
+%We note that although the training data was balanced subject-wise, the data was not balanced to have the same number of frames per subject, and it turns out that HCs had slightly less frames than the other class. Correcting for this (i.e., fixing a number of frames per subject) and removing healthy subjects with less than the minimal number of frames in the PD group improved classification accuracy to 96\%, with AUC at 99\% in the HC vs. PD problem, also producing a scores histogram with a mean score of 0.5. 
+
+%Finally, runs using a single channel were also carried out. E.g., using the F3 channel performance dropped to 93\% ACC and 98\% AUC, while the O2 channel, delivered 97\% accuracy and 100\% AUC in HC vs. PD classification. %Deep 6.0 HC vs. PD AUC-20s-xtraLaye v1r (*)-2000steps-bal (**)-1CH F3
+
+%# What channels do we use? This defines "depth" of images:
+%#channels=range(0,14)
+%channels=[0,1,4,5,8,9,12,13]
+%# electrodes: array([[([u'F3'],), ([u'F4'],), *
+%#      ([u'F7'],), ([u'F8'],), 
+%#      ([u'C3'],), ([u'C4'],), *
+%#      ([u'P3'],), ([u'P4'],), 
+%#      ([u'O1'],), ([u'O2'],), *
+%#      ([u'T3'],), ([u'T4'],), 
+%#      ([u'T5'],), ([u'T6'],)]], dtype=[('label', 'O')]) *
+
+
+%Time ordering (120 runs):
+%[ 98.79136958 63.90933355 85.83333333 95.  ]
+%[ 0.08663961 0.62180023 2.13952011 1.98955606]
+%
+%Channels
+%[ 98.30034109 63.86369579 84.58333333 93.33333333]
+%[ 0.18701498 0.66725444 2.10784195 2.27710017]
+%
+%Frequencies
+%[ 96.69549671 59.59662604 80.   91.66666667]
+%[ 0.22942244 0.74333937 2.52762515 2.52304196]
+%
+%Scramble
+%[Frame Train ACC, Frame Test ACC, Subj Test ACC, Subj AUC]:
+%
+%[ 97.32875336 58.63224045 74.5   87.  ]
+%[ 0.28958984 0.76981536 2.69211813 3.36303434]
+
+%For each run, up to 30\% of the data of the PD and HC groups (subject-wise) was left out as a test set (step A above). %Cycles of 50 iterations of {\em leave-10\%-out} train/test were carried out to obtain an estimation of the classification performance for each set of parameters. %Typically, classification accuracy in the training set was near 95-100\% across all parameter configurations.
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Interpretation }
+Once a DCNN has been trained, it can be used to explore which inputs optimally excite network nodes, including the outputs \cite{Simonayan:2014aa}. The algorithm for doing this consists essentially in maximizing a particular class score using gradient descent, starting from, e.g., a random noise image. An example of the resulting images using the DCNN above can be seen in Figure~\ref{fig:dream}. This is a particularly interesting technique in our diagnosis/prognosis problem, as it provides new insights on the class-specific features in EEG of each class. %We also checked to see that the trained network was approximately invariant to time-translation of optimized input images, as expected.
+In the case of a HC vs. PD trained network, we can see alterations in the alpha and theta spectral bands, appearing differentially in the form of bursts in each class.
+
+%\begin{figure}[h]
+%	\centering
+%	%\includegraphics[height=3cm]{figures/histograms}
+%		\includegraphics[height=3cm]{figures/HC_HCvsSNP}
+%				\includegraphics[height=3cm]{figures/SNP_HCvsSNP}
+%		\includegraphics[height=3cm]{figures/diff_HCvsSNP}
+%		
+%
+%	\caption{Sample images produced by maximizing network outputs for a given class. This particular network was trained using P4 electrode data on the problem of HC vs PD+DLB (i.e., HC vs RBDs that will develop synucleinopathy or SNP). The main features are the presence of 10 Hz bursts in the HC image (top) compared to more persistent 6--8 Hz power in the pathological spectrogram (bottom). The difference is displayed at the bottom.}
+%	\label{fig:dream}
+%\end{figure}
+
+
+\begin{figure}[h]
+	\centering
+%  \includegraphics[height=3cm]{figures/histograms}
+		\includegraphics[height=2.6 cm]{figures/HC_HCvsPD} \includegraphics[height=2.6cm]{figures/HC_HCvsSNP}
+		
+				\includegraphics[height=2.6cm]{figures/PD_HCvsPD} \includegraphics[height=2.6cm]{figures/SNP_HCvsSNP} 
+		\includegraphics[height=2.6cm]{figures/diff_HCvsPD} \includegraphics[height=2.6cm]{figures/diff_HCvsSNP}
+		%Deep Dream 6.0 HC vs. PD AUC-20s-xtraLayer v2 (*)-1ch O2-1 sec-BAL
+
+	\caption{Sample images produced by maximizing network outputs for a given class. Left column: from a network was trained using P4 electrode channel data on the problem of HC vs PD. The main features are the presence of 10 Hz bursts in the HC image (top) compared to more persistent 6 Hz power in the pathological spectrogram (middle). The difference of the two is displayed at the bottom. Right column: network was trained using P4 electrode data on the problem of HC vs PD+DLB (i.e., HC vs RBDs that will develop an $\alpha$-synucleinopathy or SNP). The main features are the presence of 10 Hz bursts in the HC image (top) compared to more persistent 6--8 Hz power in the pathological spectrogram (middle). }
+	\label{fig:dream}
+\end{figure}
+
+
+
+%\clearpage
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Discussion}
+
+\begin{figure}
+	\centering
+	\includegraphics[height=3.5cm]{figures/histogramsIt7}
+		\includegraphics[height=3.4cm]{figures/subjectmeanscoresIt7}
+	\caption{Top: RNN Frame score histogram per class (HC in blue, PD in orange) using one channel (P4). B. Subject mean score across folds. In this particular run, with mean  ACC=80\%, AUC=87\% (both $\pm 1$\%). There are clearly some subjects that are not classified correctly (this is consistently with DCNN results). The PD outlier is unusual in terms of other metrics, such as slow2fast ratio (EEG slowing) or LZW complexity \cite{Ruffini:2017ac}. Results from the DCNN are very similar.}
+	\label{fig:scores}
+\end{figure}
+
+
+\begin{figure}
+	\centering
+	\includegraphics[height=5.5cm]{figures/DNN}
+		\includegraphics[height=5.5cm]{figures/RNN}
+	\caption{Mean accuracy and AUC per EEG channel (averages and standard error of the mean over 2000 folds) for the single channel HC vs. PD classification problem. Occipital and parietal electrodes provide better discrimination (top: DCNN architecture, bottom: RNN).}
+	\label{fig:perchannel}
+\end{figure}
+
+
+
+Our results using deep networks are complementary to earlier work with this type of data using SVMs and ESNs. However, we deem this approach to be particularly interesting for various reasons. First, it largely mitigates the need for feature selection (spectral bands and channels). Secondly, results represent an improvement over related prior efforts, increasing performance by about 5--10\% in AUC \cite{Soria2014:aa,Soria2016:aa}. 
+
+We note that one of the potential issues with our dataset is the presence of healthy controls without follow up, which may be a confound. We hope to remedy this by enlarging our database and by improving our diagnosis and follow up methodologies.
+In addition to dataset quality improvements, future steps include the exploration of this approach with larger datasets as well as a more systematic study of network architecture and regularization schemes. This includes the use of deeper architectures, improved data augmentation methods, 
+alternative data segmentation and normalization schemes. With regard to data preprocessing, we should consider 
+improved spectral estimation using more advanced techniques such as state-space estimation and multitapering---as in \cite{kims:2017aa}, and 
+working with cortically or scalp-mapped EEG data prior creation of spectrograms. 
+
+Although here, as in \cite{Vilamala:2017aa}, we worked with time-frequency pre-processed data, the field will undoubtedly steer towards working with raw data in the future when larger datasets become available---as suggested in \cite{Schirrmeister:2017aa}. 
+ In closing, we note that the techniques used here can be extended to other EEG related problems, such as brain-computer interfaces, sleep scoring, detection of epileptiform activity or EEG data pre-processing, where the advantages of deep learning approaches may prove useful as well. 
+ 
+% other EEG-generated images. For example, connectivity matrices in electrode or cortical space can be used, or images that reflect more subtle aspects of the EEG, such as phase amplitude coupling or cross-frequency coherence, to name a few. Indeed, we by working with spectral power we throw away very valuable information (the spectrogram is a complex matrix).
+
+
+
+
+ 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Acknowledgments} This work has been partially funded by The Michael J. Fox Foundation for Parkinson's Research under Rapid Response Innovation Awards 2013. 
+The data was collected by Jacques Montplaisir's team at the Center for Advanced Research in Sleep Medicine affiliated to the University of Montr\`eal, Hopital du Sacre-Coeur, Montr\`eal and provided within the scope of the aforementioned project.
+
+\section*{References}
+
+\bibliography{kolmogorov}
+
+\end{document}
